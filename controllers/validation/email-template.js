@@ -1,9 +1,23 @@
 'use strict';
 
-const _ = require('lodash');
+const { trim } = require('lodash/fp');
 
-const invalidPatternsRegexes = [/<%[^=]([^<>%]*)%>/m, /\${([^{}]*)}/m];
 const authorizedKeys = ['URL', 'CODE', 'USER', 'USER.email', 'USER.username', 'TOKEN'];
+
+const createStrictInterpolationRegExp = (allowedVariableNames, flags) => {
+  const oneOfVariables = allowedVariableNames.join('|');
+
+  return new RegExp(`<%=\\s*(${oneOfVariables})\\s*%>`, flags);
+};
+
+const createLooseInterpolationRegExp = (flags) => new RegExp(/<%=([\s\S]+?)%>/, flags);
+
+const invalidPatternsRegexes = [
+  // Ignore "evaluation" patterns: <% ... %>
+  /<%[^=]([\s\S]*?)%>/m,
+  // Ignore basic string interpolations
+  /\${([^{}]*)}/m,
+];
 
 const matchAll = (pattern, src) => {
   const matches = [];
@@ -13,7 +27,7 @@ const matchAll = (pattern, src) => {
   while ((match = regexPatternWithGlobal.exec(src))) {
     const [, group] = match;
 
-    matches.push(_.trim(group));
+    matches.push(trim(group));
   }
   return matches;
 };
@@ -25,11 +39,18 @@ const isValidEmailTemplate = template => {
     }
   }
 
-  const matches = matchAll(/<%=([^<>%=]*)%>/, template);
-  for (const match of matches) {
-    if (!authorizedKeys.includes(match)) {
-      return false;
-    }
+  const interpolation = {
+    // Strict interpolation pattern to match only valid groups
+    strict: createStrictInterpolationRegExp(authorizedKeys),
+    // Weak interpolation pattern to match as many group as possible.
+    loose: createLooseInterpolationRegExp(),
+  };
+
+  const strictMatches = matchAll(interpolation.strict, template);
+  const looseMatches = matchAll(interpolation.loose, template);
+
+  if (looseMatches.length > strictMatches.length) {
+    return false;
   }
 
   return true;
