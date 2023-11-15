@@ -194,7 +194,7 @@ const getProfile = async (provider, query, callback) => {
       } else {
         callback(null, {
           username: tokenPayload['cognito:username'],
-          email: tokenPayload.email,
+          email: tokenPayload.email.toLowerCase(),
         });
       }
       break;
