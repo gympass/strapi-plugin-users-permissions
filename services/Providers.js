@@ -19,7 +19,7 @@ const getCognitoPayload = async (idToken) => {
   const verifier = CognitoJwtVerifier.create({
     userPoolId: process.env.COGNITO_POOL_ID,
     tokenUse: "id",
-    clientId: process.env.COGNITO_CLIENT_ID,
+    clientId: null,
   });
 
   try {
