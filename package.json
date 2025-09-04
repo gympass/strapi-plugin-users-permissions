@@ -41,7 +41,7 @@
     "aws-jwt-verify": "^4.0.0"
   },
   "devDependencies": {
-    "koa": "^2.13.1"
+    "koa": "^3.0.1"
   },
   "author": {
     "name": "Strapi team",
